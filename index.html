@@ -254,7 +254,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
   <div class="sb-user">
     <div class="user-avatar" id="sb-av">?</div>
     <div style="flex:1"><div class="user-name" id="sb-name">—</div><div class="user-xp" id="sb-xp">0 XP</div></div>
-    <button onclick="openResetModal()" title="Resetar progresso" style="background:transparent;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:4px" title="Resetar progresso">↺</button>
+    <button onclick="openResetModal()" title="Resetar progresso" style="background:transparent;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:4px">↺</button>
   </div>
   <div class="sb-progress">
     <div class="prog-label"><span>Progresso geral</span><span id="prog-pct">0%</span></div>
@@ -999,36 +999,43 @@ window.showSolution = function(lessonId, exId) {
 
   SOLUTIONS_SHOWN[exId] = true;
 
-  const solution = ex.solution || ex.placeholder || '# Estude os exemplos da lição e tente novamente';
-  const hint = ex.hint || 'Releia os exemplos da lição com calma';
+  const solution = ex.solution || ex.placeholder || '# Estude os exemplos da licao e tente novamente';
+  const hint = ex.hint || 'Releia os exemplos da licao com calma';
   const level = ex.level || 'easy';
+  const safeCode = solution.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // Build HTML safely without nested template literals
-  const safeCode = solution
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  solBox.innerHTML = '';
 
-  const html = [
-    '<h4>💡 Solução comentada</h4>',
-    '<p style="font-size:12px;color:#6b5f52;margin-bottom:10px;font-weight:500">',
-    'Estude cada linha com calma. Depois feche e tente reescrever do zero — isso fixa muito melhor do que copiar!',
-    '</p>',
-    '<pre>' + safeCode + '</pre>',
-    '<p style="font-size:11px;color:#7b5ea7;margin-top:10px;font-weight:700">',
-    '💜 Dica: ' + hint,
-    '</p>',
-    '<button class="btn btn-green" style="margin-top:12px;font-size:12px"',
-    ' onclick="markExDoneWithHelp('' + lessonId + '','' + exId + '','' + level + '')"',
-    '>✓ Entendi — marcar como concluído</button>'
-  ].join('\n');
+  const h4 = document.createElement('h4');
+  h4.textContent = 'Solucao comentada';
+  h4.style.cssText = 'font-size:12px;font-weight:800;color:#7b5ea7;margin-bottom:10px';
+  solBox.appendChild(h4);
 
-  solBox.innerHTML = html;
+  const p1 = document.createElement('p');
+  p1.textContent = 'Estude cada linha. Depois tente reescrever do zero sem olhar!';
+  p1.style.cssText = 'font-size:12px;color:#6b5f52;margin-bottom:10px;font-weight:500';
+  solBox.appendChild(p1);
+
+  const pre = document.createElement('pre');
+  pre.style.cssText = 'background:#2c2825;border-radius:8px;padding:12px;font-size:11px;color:#d4c8be;line-height:1.7;overflow-x:auto;margin:0';
+  pre.innerHTML = safeCode;
+  solBox.appendChild(pre);
+
+  const p2 = document.createElement('p');
+  p2.textContent = 'Dica: ' + hint;
+  p2.style.cssText = 'font-size:11px;color:#7b5ea7;margin-top:10px;font-weight:700';
+  solBox.appendChild(p2);
+
+  const btn = document.createElement('button');
+  btn.textContent = 'Entendi - marcar como concluido';
+  btn.className = 'btn btn-green';
+  btn.style.cssText = 'margin-top:12px;font-size:12px';
+  btn.onclick = function() { markExDoneWithHelp(lessonId, exId, level); };
+  solBox.appendChild(btn);
+
   solBox.classList.add('show');
   if(solBtn) solBtn.style.display = 'none';
-
-  // Scroll to solution
-  solBox.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  solBox.scrollIntoView({behavior:'smooth', block:'nearest'});
 };
 
 window.markExDoneWithHelp = function(lessonId, exId, level) {
