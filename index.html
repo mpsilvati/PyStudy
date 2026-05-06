@@ -1653,6 +1653,13 @@ function showToast(msg, dur=2500) {
 // PROFILE PAGE
 // ═══════════════════════════════════════════════════════════
 
+window.handleImgError = function(img) {
+  img.style.display = 'none';
+  var span = document.createElement('span');
+  span.textContent = (S && S.userInitials) || '?';
+  img.parentNode.appendChild(span);
+};
+
 const BADGES_DEF = [
   {id:'first_step', icon:'🐣', name:'Primeiro Passo', desc:'Completou a primeira lição', check: s => Object.keys(s.completedLessons||{}).length >= 1},
   {id:'week1', icon:'🏅', name:'Semana 1 Completa', desc:'Completou a semana 1 inteira', check: s => ['w1l1','w1l2','w1l3','w1l4'].every(id=>s.completedLessons&&s.completedLessons[id])},
@@ -1704,9 +1711,8 @@ function renderProfile() {
   const goal = S.dailyGoal || 1;
 
   const avHtml = S.userPhoto
-    ? '<img src="'+S.userPhoto+'" alt="" onerror="this.style.display='none';this.nextSibling.style.display='flex'">'
-      + '<span style="display:none">'+(S.userInitials||'?')+'</span>'
-    : '<span>'+(S.userInitials||'?')+'</span>';
+    ? '<img src="' + S.userPhoto + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+    : '<span>' + (S.userInitials||'?') + '</span>';
 
   let html = '<div class="profile-area">';
 
