@@ -62,6 +62,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .nav-item.active{background:var(--green-dim);border-color:var(--green-mid)}
 .nav-item.done .ni-num{background:var(--green-mid);color:var(--green2);border-color:var(--green-mid)}
 .nav-item.locked{opacity:.35;cursor:not-allowed;pointer-events:none}
+.nav-item.nav-locked{opacity:.6;cursor:pointer}
+.nav-item.nav-locked .ni-name{color:var(--text3)}
 .ni-num{width:24px;height:24px;border-radius:6px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text3);flex-shrink:0;font-family:var(--mono)}
 .nav-item.active .ni-num{background:var(--green-dim);border-color:var(--green);color:var(--green2)}
 .ni-info{flex:1;min-width:0}
@@ -408,7 +410,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
     <div class="login-sub">Formação Python completa — do zero ao avançado. Estude com seu grupo e veja quem avança mais!</div>
     <div class="login-features">
       <div class="login-feature">40 lições com exemplos práticos</div>
-      <div class="login-feature">400 exercícios com 3 níveis de dificuldade</div>
+      <div class="login-feature">400 exercícios desbloqueados progressivamente</div>
       <div class="login-feature">Glossário com 127 termos explicados</div>
       <div class="login-feature">Vídeos de apoio em cada lição</div>
       <div class="login-feature">Ranking em tempo real do grupo</div>
@@ -889,11 +891,12 @@ function renderSidebar() {
       const active = S.currentLesson===lesson.id;
       const idx = CURRICULUM_DATA.indexOf(lesson);
       const locked = idx > 0 && !S.completedLessons[CURRICULUM_DATA[idx-1].id];
-      let cls = 'nav-item'+(done?' done':active?' active':'')+(locked?' locked':'');
+      // Show all lessons in sidebar but mark locked ones subtly
+      let cls = 'nav-item'+(done?' done':active?' active':'')+(locked?' nav-locked':'');
       html += `<div class="${cls}" onclick="selectLesson('${lesson.id}')">
-        <div class="ni-num">${done?'✓':lesson.num}</div>
+        <div class="ni-num">${done?'✓':locked?'🔒':lesson.num}</div>
         <div class="ni-info"><div class="ni-name">${lesson.title}</div><div class="ni-sub">${lesson.subtitle}</div></div>
-        <div class="ni-xp">+${lesson.xp}</div>
+        <div class="ni-xp" style="${locked?'color:var(--text3)':''}">+${lesson.xp}</div>
       </div>`;
     });
     if(challenge) {
@@ -944,7 +947,8 @@ window.selectLesson = function(id) {
   const lesson = CURRICULUM_DATA.find(l=>l.id===id);
   if(!lesson) return;
   const idx = CURRICULUM_DATA.indexOf(lesson);
-  if(idx>0 && !S.completedLessons[CURRICULUM_DATA[idx-1].id]) return;
+  const isLocked = idx > 0 && !S.completedLessons[CURRICULUM_DATA[idx-1].id];
+  // Always allow viewing — just lock the exercises
   S.currentLesson = id; S.currentWeek = lesson.week;
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-learn').classList.add('active');
@@ -953,10 +957,12 @@ window.selectLesson = function(id) {
   renderWeekNav(); renderSidebar(); renderLesson(lesson);
 };
 
-function renderLesson(lesson) {
+function renderLesson(lesson, forceUnlocked) {
   const lc = LESSON_CONTENT[lesson.id];
   if(!lc) return;
   const done = S.completedLessons[lesson.id];
+  const idx = CURRICULUM_DATA.indexOf(lesson);
+  const isLocked = !forceUnlocked && idx > 0 && !S.completedLessons[CURRICULUM_DATA[idx-1].id];
   const exercises = lc.exercises || [];
   const allExDone = exercises.length===0 || exercises.every(e=>S.completedExercises[e.id]);
 
@@ -1018,11 +1024,19 @@ function renderLesson(lesson) {
       </div>
       <div class="lesson-content">${lc.content}</div>
       ${videoHtml}
-      ${exercises.length>0?`<div class="ex-section">
-        <div class="ex-section-head"><h3>Exercícios Práticos</h3><p>Complete todos para desbloquear a próxima lição</p></div>
-        ${exHtml}
-      </div>`:''}
-      <div class="complete-bar">${completeHtml}</div>
+      ${exercises.length>0?(isLocked ? `
+        <div class="ex-section">
+          <div style="background:var(--bg3);border:1.5px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;margin-top:8px">
+            <div style="font-size:32px;margin-bottom:10px">🔒</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Exercícios bloqueados</div>
+            <div style="font-size:13px;color:var(--text3);font-weight:500;line-height:1.7">Complete a lição anterior para desbloquear os exercícios desta lição.</div>
+            <button class="btn btn-ghost" style="margin-top:14px;font-size:12px" onclick="goToPrevLesson('${lesson.id}')">← Ir para lição anterior</button>
+          </div>
+        </div>` : `<div class="ex-section">
+          <div class="ex-section-head"><h3>Exercícios Práticos</h3><p>Complete todos para desbloquear a próxima lição</p></div>
+          ${exHtml}
+        </div>`):''}
+      <div class="complete-bar">${isLocked ? '' : completeHtml}</div>
       <div class="forum-section">
         <div class="forum-head">
           <h3>💬 Dúvidas e Discussão</h3>
@@ -1360,6 +1374,11 @@ window.showTooltip = function(e, term) {
 document.addEventListener('click', () => {
   document.getElementById('tooltip')?.classList.remove('show');
 });
+
+window.goToPrevLesson = function(currentId) {
+  const idx = CURRICULUM_DATA.findIndex(l => l.id === currentId);
+  if(idx > 0) selectLesson(CURRICULUM_DATA[idx-1].id);
+};
 
 window.showHint = function(exId, hint) { showFb(exId,'fb-hint','💡 '+hint); };
 
@@ -2045,9 +2064,7 @@ window.toggleFAQ = function(i) {
   if(!isOpen) { q.classList.add('open'); a.classList.add('show'); }
 };
 
-</script>
-</body>
-</html>
+
 // ═══════════════════════════════════════════════════════════
 // STREAK DE DIAS
 // ═══════════════════════════════════════════════════════════
@@ -2306,5 +2323,6 @@ window.openCertificate = function() {
   }
   showCertificate();
 };
-
-
+</script>
+</body>
+</html>
