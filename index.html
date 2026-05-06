@@ -368,6 +368,38 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .faq-a.show{display:block}
 .faq-a code{font-family:var(--mono);font-size:12px;background:var(--bg4);padding:2px 6px;border-radius:4px;color:var(--green2)}
 
+/* ADMIN */
+.admin-badge{display:inline-flex;align-items:center;gap:4px;background:#1a0a3d;border:1px solid #6d28d9;color:#a78bfa;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.admin-panel{max-width:740px;margin:0 auto;padding:30px}
+.admin-header{background:linear-gradient(135deg,#1a0a3d,#0a1e3d);border:1.5px solid #6d28d9;border-radius:16px;padding:22px;margin-bottom:22px;display:flex;align-items:center;gap:14px}
+.admin-header h2{font-size:20px;font-weight:800;color:#e2d9ff;margin-bottom:3px}
+.admin-header p{font-size:12px;color:#8b7db5;font-weight:500}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.admin-stat{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.admin-stat-val{font-size:24px;font-weight:800;font-family:var(--mono);color:var(--text)}
+.admin-stat-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.admin-users{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:22px}
+.admin-user-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);transition:background .15s}
+.admin-user-row:last-child{border:none}
+.admin-user-row:hover{background:var(--bg3)}
+.admin-user-av{width:32px;height:32px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;overflow:hidden;flex-shrink:0}
+.admin-user-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.admin-user-info{flex:1;min-width:0}
+.admin-user-name{font-size:13px;font-weight:700;color:var(--text)}
+.admin-user-meta{font-size:11px;color:var(--text3);font-weight:500}
+.admin-user-xp{font-size:12px;font-weight:800;font-family:var(--mono);color:var(--green2);margin-right:8px}
+.admin-user-actions{display:flex;gap:6px}
+.admin-btn{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
+.admin-btn-danger{background:var(--red-dim);color:var(--red);border:1px solid #f5c0bb}
+.admin-btn-danger:hover{background:#fdd}
+.admin-btn-warn{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-mid)}
+.admin-forum-comment{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.admin-forum-comment:last-child{border:none}
+.admin-comment-body{flex:1}
+.admin-comment-meta{font-size:11px;color:var(--text3);font-weight:500;margin-bottom:4px}
+.admin-comment-text{font-size:13px;color:var(--text2);font-weight:500;line-height:1.6}
+.admin-section-title{font-size:13px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.admin-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .reset-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
 .reset-modal.show{display:flex}
 .reset-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:28px;max-width:380px;width:90%;text-align:center;box-shadow:var(--shadow2)}
@@ -433,7 +465,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
   </div>
   <div class="sb-user">
     <div class="user-avatar" id="sb-av">?</div>
-    <div style="flex:1"><div class="user-name" id="sb-name">—</div><div class="user-xp" id="sb-xp">0 XP</div></div>
+    <div style="flex:1"><div class="user-name" id="sb-name">—</div><div class="user-xp" id="sb-xp">0 XP</div><div id="admin-badge-sb" style="display:none"><span class="admin-badge">👑 Admin</span></div></div>
     <button onclick="openResetModal()" title="Resetar progresso" style="background:transparent;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:4px">↺</button>
   </div>
   <div class="sb-progress">
@@ -450,6 +482,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
     <div class="tnav-tab" onclick="switchTab('ranking',this)">🥇 Ranking</div>
     <div class="tnav-tab" onclick="switchTab('profile',this)">👤 Perfil</div>
     <div class="tnav-tab" onclick="switchTab('faq',this)">❓ FAQ</div>
+    <div class="tnav-tab" id="admin-tab" style="display:none" onclick="switchTab('admin',this)">🛡️ Admin</div>
     <div style="margin-left:auto;padding:0 10px;display:flex;align-items:center;gap:8px">
       <div class="streak-badge" id="streak-badge" title="Dias consecutivos estudando">
         <span class="streak-fire">🔥</span>
@@ -473,6 +506,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
   <div class="tab-pane" id="tab-videos"><div id="videos-area"></div></div>
   <div class="tab-pane" id="tab-profile"><div id="profile-area"></div></div>
   <div class="tab-pane" id="tab-faq"><div id="faq-area"></div></div>
+  <div class="tab-pane" id="tab-admin"><div id="admin-area"></div></div>
   <div class="tab-pane" id="tab-ranking">
     <div class="rank-area" id="rank-area"></div>
     <div style="max-width:740px;margin:0 auto;padding:0 30px 30px;text-align:center">
@@ -1660,6 +1694,7 @@ window.switchTab = function(name, el) {
   if(name==='videos') renderVideos();
   if(name==='profile') renderProfile();
   if(name==='faq') renderFAQ();
+  if(name==='admin') renderAdmin();
 };
 
 function showToast(msg, dur=2500) {
@@ -2323,6 +2358,165 @@ window.openCertificate = function() {
   }
   showCertificate();
 };
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN SYSTEM
+// ═══════════════════════════════════════════════════════════
+const ADMIN_UID = 'rj9uBQjnPJMggytWkYc00GJOZTZ2';
+
+function isAdmin() {
+  return S.uid === ADMIN_UID;
+}
+
+function initAdmin() {
+  if(!isAdmin()) return;
+  // Show admin tab
+  const adminTab = document.getElementById('admin-tab');
+  if(adminTab) adminTab.style.display = '';
+  // Show admin badge
+  const adminBadge = document.getElementById('admin-badge-sb');
+  if(adminBadge) adminBadge.style.display = '';
+}
+
+async function renderAdmin() {
+  const area = document.getElementById('admin-area');
+  if(!area || !isAdmin()) {
+    if(area) area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Acesso negado.</div>';
+    return;
+  }
+
+  area.innerHTML = '<div class="admin-panel"><div style="text-align:center;padding:20px;color:var(--text3)">Carregando painel...</div></div>';
+
+  try {
+    const { collection, getDocs, deleteDoc, doc, query, orderBy } =
+      await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+    // Load all users
+    const usersSnap = await getDocs(collection(db, 'users'));
+    const users = usersSnap.docs.map(d => ({id:d.id, ...d.data()}));
+    const totalXP = users.reduce((sum,u) => sum+(u.xp||0), 0);
+    const totalLessons = users.reduce((sum,u) => sum+Object.keys(u.completedLessons||{}).length, 0);
+    const totalEx = users.reduce((sum,u) => sum+Object.keys(u.completedExercises||{}).length, 0);
+
+    let html = '<div class="admin-panel">';
+
+    // Header
+    html += '<div class="admin-header">';
+    html += '<div style="font-size:40px">🛡️</div>';
+    html += '<div><h2>Painel Administrativo</h2><p>Gerencie usuários, comentários e estatísticas do PyStudy</p></div>';
+    html += '</div>';
+
+    // Stats
+    html += '<div class="section-title" style="color:#a78bfa">📊 Visão Geral</div>';
+    html += '<div class="admin-stats">';
+    const stats = [
+      {icon:'👥', val:users.length, label:'Usuários'},
+      {icon:'⚡', val:totalXP, label:'XP Total'},
+      {icon:'📖', val:totalLessons, label:'Lições feitas'},
+      {icon:'✏️', val:totalEx, label:'Exercícios'},
+    ];
+    stats.forEach(s => {
+      html += '<div class="admin-stat"><div style="font-size:20px;margin-bottom:4px">'+s.icon+'</div>';
+      html += '<div class="admin-stat-val">'+s.val+'</div>';
+      html += '<div class="admin-stat-label">'+s.label+'</div></div>';
+    });
+    html += '</div>';
+
+    // Users list
+    html += '<div class="section-title" style="color:#a78bfa">👥 Usuários ('+users.length+')</div>';
+    html += '<div class="admin-users">';
+    const sorted = [...users].sort((a,b) => (b.xp||0)-(a.xp||0));
+    sorted.forEach(u => {
+      const isMe = u.id === ADMIN_UID;
+      const av = u.photo
+        ? '<img src="'+u.photo+'" alt="">'
+        : '<span>'+(u.initials||'?')+'</span>';
+      const lessons = Object.keys(u.completedLessons||{}).length;
+      const exercises = Object.keys(u.completedExercises||{}).length;
+      html += '<div class="admin-user-row">';
+      html += '<div class="admin-user-av">'+av+'</div>';
+      html += '<div class="admin-user-info">';
+      html += '<div class="admin-user-name">'+(u.name||'Anônimo')+(isMe?' <span class="admin-badge">você</span>':'')+'</div>';
+      html += '<div class="admin-user-meta">'+(u.userEmail||'')+" · "+lessons+' lições · '+exercises+' exercícios · streak: '+(u.streak||0)+'</div>';
+      html += '</div>';
+      html += '<div class="admin-user-xp">'+(u.xp||0)+' XP</div>';
+      if(!isMe) {
+        html += '<div class="admin-user-actions">';
+        html += '<button class="admin-btn admin-btn-danger" onclick="adminDeleteUser(''+u.id+'',''+( u.name||'Usuário')+'')">🗑️ Remover</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // Forum moderation
+    html += '<div class="section-title" style="color:#a78bfa">💬 Moderação do Fórum</div>';
+    html += '<div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:22px">';
+
+    // Load recent comments from all lessons
+    let allComments = [];
+    try {
+      for(const lesson of CURRICULUM_DATA.slice(0,10)) {
+        const q = query(collection(db,'forum',lesson.id,'comments'), orderBy('ts','desc'));
+        const snap = await getDocs(q);
+        snap.docs.forEach(d => {
+          allComments.push({id:d.id, lessonId:lesson.id, lessonTitle:lesson.title, ...d.data()});
+        });
+      }
+      allComments.sort((a,b) => (b.ts?.seconds||0)-(a.ts?.seconds||0));
+    } catch(e) { console.log('Forum load:', e.message); }
+
+    if(allComments.length === 0) {
+      html += '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Nenhum comentário ainda.</div>';
+    } else {
+      allComments.slice(0,20).forEach(c => {
+        const time = c.ts ? new Date(c.ts.seconds*1000).toLocaleDateString('pt-BR') : '';
+        const av = c.photo ? '<img src="'+c.photo+'" alt="">' : '<span>'+(c.initials||'?')+'</span>';
+        html += '<div class="admin-forum-comment">';
+        html += '<div class="admin-user-av" style="flex-shrink:0">'+av+'</div>';
+        html += '<div class="admin-comment-body">';
+        html += '<div class="admin-comment-meta"><strong>'+(c.name||'Anônimo')+'</strong> · '+c.lessonTitle+' · '+time+'</div>';
+        html += '<div class="admin-comment-text">'+c.text+'</div>';
+        html += '</div>';
+        html += '<button class="admin-btn admin-btn-danger" style="flex-shrink:0" onclick="adminDeleteComment(''+c.lessonId+'',''+c.id+'')">🗑️</button>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+    html += '</div>';
+
+    area.innerHTML = html;
+  } catch(e) {
+    area.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red)">Erro ao carregar painel: '+e.message+'</div>';
+  }
+}
+
+window.adminDeleteComment = async function(lessonId, commentId) {
+  if(!isAdmin()) return;
+  if(!confirm('Deletar este comentário?')) return;
+  try {
+    const { doc: docFn, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    await deleteDoc(docFn(db, 'forum', lessonId, 'comments', commentId));
+    showToast('Comentário removido!');
+    renderAdmin();
+  } catch(e) {
+    showToast('Erro ao remover: '+e.message, 3000);
+  }
+};
+
+window.adminDeleteUser = async function(uid, name) {
+  if(!isAdmin()) return;
+  if(!confirm('Remover usuário "'+name+'" e todos os seus dados? Isso não pode ser desfeito.')) return;
+  try {
+    const { doc: docFn, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    await deleteDoc(docFn(db, 'users', uid));
+    showToast('Usuário '+name+' removido!');
+    renderAdmin();
+  } catch(e) {
+    showToast('Erro ao remover usuário: '+e.message, 3000);
+  }
+};
+
 </script>
 </body>
 </html>
