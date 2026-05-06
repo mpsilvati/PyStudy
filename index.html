@@ -562,29 +562,38 @@ let DATA_LOADED = false;
 async function loadLessonsData() {
   if(DATA_LOADED) return true;
 
-  // Try multiple paths — covers GitHub Pages, local server, etc.
+  // Try multiple paths in order of reliability
   const paths = [
+    'https://cdn.jsdelivr.net/gh/mpsilvati/pystudy@main/lessons.json',
+    'https://raw.githubusercontent.com/mpsilvati/pystudy/main/lessons.json',
+    'https://mpsilvati.github.io/pystudy/lessons.json',
     './lessons.json',
     'lessons.json',
-    '/pystudy/lessons.json',
-    'https://mpsilvati.github.io/pystudy/lessons.json',
   ];
 
   for(const path of paths) {
     try {
       console.log('Trying:', path);
-      const res = await fetch(path, {cache: 'no-cache'});
-      if(!res.ok) continue;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const res = await fetch(path, {
+        cache: 'no-cache',
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if(!res.ok) { console.warn('HTTP error:', res.status, path); continue; }
       const data = await res.json();
-      if(!data.curriculum || data.curriculum.length === 0) continue;
+      if(!data.curriculum || data.curriculum.length === 0) {
+        console.warn('Empty data from:', path); continue;
+      }
       CURRICULUM_DATA = data.curriculum;
       LESSON_CONTENT = data.content || {};
       CHALLENGES_DATA = data.challenges || [];
       DATA_LOADED = true;
-      console.log('Loaded from:', path, '—', CURRICULUM_DATA.length, 'lessons');
+      console.log('✅ Loaded from:', path, '—', CURRICULUM_DATA.length, 'lessons');
       return true;
     } catch(e) {
-      console.warn('Failed:', path, e.message);
+      console.warn('❌ Failed:', path, e.message);
     }
   }
 
@@ -741,7 +750,7 @@ let tipIdx = 0;
 const tipEl = document.getElementById('loading-tip');
 // Update loading status
 const loadingStatus = document.getElementById('loading-status');
-const statusMessages = ['Conectando...', 'Verificando login...', 'Carregando conteúdo...', 'Quase lá...'];
+const statusMessages = ['Conectando ao Firebase...', 'Verificando login...', 'Carregando lições...', 'Preparando conteúdo...', 'Quase lá...'];
 let statusIdx = 0;
 const statusInterval = setInterval(() => {
   if(!loadingStatus) { clearInterval(statusInterval); return; }
