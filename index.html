@@ -1703,7 +1703,10 @@ function renderProfile() {
   const earnedBadges = BADGES_DEF.filter(b => b.check(S));
   const goal = S.dailyGoal || 1;
 
-  const avHtml = S.userPhoto ? '<img src="'+S.userPhoto+'" alt="">' : '<span>'+(S.userInitials||'?')+'</span>';
+  const avHtml = S.userPhoto
+    ? '<img src="'+S.userPhoto+'" alt="" onerror="this.style.display='none';this.nextSibling.style.display='flex'">'
+      + '<span style="display:none">'+(S.userInitials||'?')+'</span>'
+    : '<span>'+(S.userInitials||'?')+'</span>';
 
   let html = '<div class="profile-area">';
 
@@ -1793,8 +1796,20 @@ window.editName = function() {
   const display = document.getElementById('profile-name-display');
   if(!display) return;
   const current = S.userName;
-  display.outerHTML = '<input class="profile-name-edit" id="name-edit-input" value="'+current+'" maxlength="40" onblur="saveName()" onkeydown="if(event.key==='Enter')saveName()">';
-  setTimeout(() => document.getElementById('name-edit-input')?.focus(), 50);
+  const input = document.createElement('input');
+  input.className = 'profile-name-edit';
+  input.id = 'name-edit-input';
+  input.value = current;
+  input.maxLength = 40;
+  input.onblur = function() { window.saveName(); };
+  input.addEventListener('keydown', function(e) {
+    if(e.key === 'Enter') window.saveName();
+  });
+  display.replaceWith(input);
+  setTimeout(function() {
+    var el = document.getElementById('name-edit-input');
+    if(el) el.focus();
+  }, 50);
 };
 
 window.saveName = async function() {
