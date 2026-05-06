@@ -176,6 +176,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .xp-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2);font-weight:500}
 .xp-row:last-child{border:none}
 .xp-val{font-family:var(--mono);font-size:12px;font-weight:700}
+.videos-area{max-width:740px;margin:0 auto;padding:30px}
+.videos-header{margin-bottom:24px}
+.videos-header h2{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:5px}
+.videos-header p{font-size:13px;color:var(--text3);font-weight:500}
+.mundo-section{margin-bottom:32px}
+.mundo-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.mundo-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.video-card{display:flex;align-items:center;gap:14px;padding:13px 15px;background:var(--bg2);border:1.5px solid var(--border);border-radius:11px;margin-bottom:8px;cursor:pointer;transition:all .15s;text-decoration:none;box-shadow:var(--shadow)}
+.video-card:hover{border-color:var(--red);transform:translateY(-1px);box-shadow:var(--shadow2)}
+.video-thumb{width:48px;height:48px;background:#ff0000;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.video-info{flex:1;min-width:0}
+.video-num{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.video-title{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-desc{font-size:11px;color:var(--text3);font-weight:500;margin-top:2px}
+.video-arrow{font-size:16px;color:var(--text3);flex-shrink:0}
+.playlist-btn{display:inline-flex;align-items:center;gap:7px;background:#ff0000;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;margin-bottom:20px;font-family:var(--font)}
+.playlist-btn:hover{background:#cc0000}
 .week-nav{display:flex;overflow-x:auto;gap:5px;padding:9px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;scrollbar-width:none}
 .week-nav::-webkit-scrollbar{display:none}
 .wk-btn{padding:5px 13px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--bg3);color:var(--text3);white-space:nowrap;font-family:var(--font);transition:all .15s}
@@ -213,7 +230,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
     <div class="login-sub">Formação Python completa — do zero ao avançado. Estude com seu grupo e veja quem avança mais!</div>
     <div class="login-features">
       <div class="login-feature">40 lições com exemplos práticos</div>
-      <div class="login-feature">120 exercícios com 3 níveis</div>
+      <div class="login-feature">400 exercícios com 3 níveis de dificuldade</div>
+      <div class="login-feature">Glossário com 127 termos explicados</div>
+      <div class="login-feature">Vídeos de apoio em cada lição</div>
       <div class="login-feature">Ranking em tempo real do grupo</div>
       <div class="login-feature">Progresso salvo na nuvem</div>
     </div>
@@ -247,6 +266,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
   <div class="topnav">
     <div class="tnav-tab active" onclick="switchTab('learn',this)">📖 Aprender</div>
     <div class="tnav-tab" onclick="switchTab('challenge',this)">🏆 Desafio</div>
+    <div class="tnav-tab" onclick="switchTab('videos',this)">🎬 Vídeos</div>
     <div class="tnav-tab" onclick="switchTab('ranking',this)">🥇 Ranking</div>
     <div style="margin-left:auto;padding:0 14px">
       <button class="btn btn-ghost" onclick="logout()" style="font-size:11px;padding:5px 10px">Sair</button>
@@ -263,6 +283,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
     </div>
   </div>
   <div class="tab-pane" id="tab-challenge"><div id="challenge-area"></div></div>
+  <div class="tab-pane" id="tab-videos"><div id="videos-area"></div></div>
   <div class="tab-pane" id="tab-ranking"><div class="rank-area" id="rank-area"></div></div>
 </div>
 </div>
@@ -288,7 +309,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 <!-- FIREBASE SDKs -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -366,10 +387,24 @@ const VIDEO_REFS = {
 
 // AUTH
 window.loginGoogle = async () => {
+  const provider = new GoogleAuthProvider();
   try {
-    const provider = new GoogleAuthProvider();
+    // Try popup first (faster)
     await signInWithPopup(auth, provider);
-  } catch(e) { alert("Erro ao fazer login: " + e.message); }
+  } catch(e) {
+    // Popup blocked or failed — use redirect instead
+    if(e.code === 'auth/popup-blocked' || 
+       e.code === 'auth/popup-closed-by-user' ||
+       e.code === 'auth/cancelled-popup-request') {
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch(e2) {
+        alert("Erro ao fazer login: " + e2.message);
+      }
+    } else {
+      alert("Erro ao fazer login: " + e.message);
+    }
+  }
 };
 window.openResetModal = function() {
   document.getElementById('reset-modal').classList.add('show');
@@ -405,6 +440,18 @@ window.logout = async () => {
   await signOut(auth);
   location.reload();
 };
+
+// Check if returning from redirect login
+getRedirectResult(auth).then(result => {
+  if(result?.user) {
+    // User just logged in via redirect — onAuthStateChanged will handle it
+    console.log('Redirect login successful');
+  }
+}).catch(e => {
+  if(e.code !== 'auth/no-auth-event') {
+    console.error('Redirect error:', e);
+  }
+});
 
 onAuthStateChanged(auth, async user => {
   if(user) {
@@ -1072,6 +1119,99 @@ function showChFb(partId, cls, msg) {
   if(!fb) return; fb.className='ex-feedback show '+cls; fb.textContent=msg;
 }
 
+function renderVideos() {
+  const area = document.getElementById('videos-area');
+
+  const MUNDOS = [
+    {
+      num: 1,
+      title: "Mundo 1 — Fundamentos",
+      color: "#2d9e6b",
+      playlist: "https://www.youtube.com/playlist?list=PLpwygc0AuGOXJ18fPwPNIeXvzKid_AUkm",
+      desc: "Primeiros passos com Python — do zero absoluto",
+      videos: [
+        {n:"01", title:"Bem-vindo ao Curso de Python", desc:"Apresentação do curso e do professor Guanabara", url:"https://www.youtube.com/results?search_query=curso+em+video+python+aula+1+introducao+guanabara"},
+        {n:"02", title:"Instalando o Python e o VS Code", desc:"Configurando o ambiente de desenvolvimento", url:"https://www.youtube.com/results?search_query=curso+em+video+python+instalacao+pycharm+guanabara"},
+        {n:"03", title:"Criando o Primeiro Programa", desc:"print(), comentários e seu primeiro código", url:"https://www.youtube.com/results?search_query=curso+em+video+python+primeiro+programa+guanabara"},
+        {n:"04", title:"Tipos Primitivos e Variáveis", desc:"int, float, str, bool e como criar variáveis", url:"https://www.youtube.com/results?search_query=curso+em+video+python+tipos+primitivos+variaveis+guanabara"},
+        {n:"05", title:"Operadores Aritméticos", desc:"Soma, subtração, multiplicação, divisão e mais", url:"https://www.youtube.com/results?search_query=curso+em+video+python+operadores+aritmeticos+guanabara"},
+        {n:"06", title:"Operadores Relacionais", desc:"Comparações: ==, !=, >, <, >=, <=", url:"https://www.youtube.com/results?search_query=curso+em+video+python+operadores+relacionais+guanabara"},
+        {n:"07", title:"Operadores Lógicos", desc:"and, or, not e tabelas verdade", url:"https://www.youtube.com/results?search_query=curso+em+video+python+operadores+logicos+guanabara"},
+        {n:"08", title:"Entrada de Dados com input()", desc:"Lendo dados digitados pelo usuário", url:"https://www.youtube.com/results?search_query=curso+em+video+python+input+entrada+dados+guanabara"},
+        {n:"09", title:"Condicionais — if e else", desc:"Tomando decisões no código", url:"https://www.youtube.com/results?search_query=curso+em+video+python+if+else+condicional+guanabara"},
+        {n:"10", title:"Condicionais — elif", desc:"Múltiplas condições com elif", url:"https://www.youtube.com/results?search_query=curso+em+video+python+elif+condicional+guanabara"},
+      ]
+    },
+    {
+      num: 2,
+      title: "Mundo 2 — Estruturas de Controle",
+      color: "#3b7dd8",
+      playlist: "https://www.youtube.com/playlist?list=PLpwygc0AuGOXJ18fPwPNIeXvzKid_AUkm",
+      desc: "Loops, repetições e controle de fluxo",
+      videos: [
+        {n:"11", title:"Loop for e range()", desc:"Repetindo código com o loop for", url:"https://www.youtube.com/results?search_query=curso+em+video+python+for+range+guanabara"},
+        {n:"12", title:"Loop while", desc:"Repetindo enquanto uma condição for verdadeira", url:"https://www.youtube.com/results?search_query=curso+em+video+python+while+guanabara"},
+        {n:"13", title:"break e continue", desc:"Controlando o fluxo dos loops", url:"https://www.youtube.com/results?search_query=curso+em+video+python+break+continue+guanabara"},
+        {n:"14", title:"Strings — Fatiamento", desc:"Slicing e manipulação avançada de texto", url:"https://www.youtube.com/results?search_query=curso+em+video+python+strings+fatiamento+guanabara"},
+        {n:"15", title:"Strings — Métodos", desc:"upper, lower, strip, split, replace e mais", url:"https://www.youtube.com/results?search_query=curso+em+video+python+strings+metodos+guanabara"},
+      ]
+    },
+    {
+      num: 3,
+      title: "Mundo 3 — Estruturas Compostas",
+      color: "#7b5ea7",
+      playlist: "https://www.youtube.com/playlist?list=PLpwygc0AuGOXJ18fPwPNIeXvzKid_AUkm",
+      desc: "Listas, tuplas, dicionários e funções",
+      videos: [
+        {n:"16", title:"Listas", desc:"Criando e manipulando listas em Python", url:"https://www.youtube.com/results?search_query=curso+em+video+python+listas+guanabara"},
+        {n:"17", title:"Tuplas", desc:"Sequências imutáveis e quando usá-las", url:"https://www.youtube.com/results?search_query=curso+em+video+python+tuplas+guanabara"},
+        {n:"18", title:"Dicionários", desc:"Estrutura chave-valor em Python", url:"https://www.youtube.com/results?search_query=curso+em+video+python+dicionarios+guanabara"},
+        {n:"19", title:"Funções — Parte 1", desc:"def, parâmetros e return", url:"https://www.youtube.com/results?search_query=curso+em+video+python+funcoes+def+guanabara"},
+        {n:"20", title:"Funções — Parte 2", desc:"Funções com múltiplos retornos e padrões", url:"https://www.youtube.com/results?search_query=curso+em+video+python+funcoes+avancado+guanabara"},
+        {n:"21", title:"Módulos e Pacotes", desc:"Organizando e importando código", url:"https://www.youtube.com/results?search_query=curso+em+video+python+modulos+pacotes+guanabara"},
+        {n:"22", title:"Tratamento de Erros", desc:"try, except e como lidar com exceções", url:"https://www.youtube.com/results?search_query=curso+em+video+python+excecoes+try+except+guanabara"},
+      ]
+    }
+  ];
+
+  let html = '<div class="videos-area">';
+  html += '<div class="videos-header">';
+  html += '<h2>🎬 Vídeos — Curso em Vídeo</h2>';
+  html += '<p>Aulas do professor Gustavo Guanabara, organizadas por módulo. Assista no YouTube como complemento às lições do PyStudy.</p>';
+  html += '</div>';
+
+  MUNDOS.forEach(mundo => {
+    html += '<div class="mundo-section">';
+    html += `<div class="mundo-title" style="color:${mundo.color}">Mundo ${mundo.num} — ${mundo.title.split('—')[1].trim()}</div>`;
+    html += `<a href="${mundo.playlist}" target="_blank" class="playlist-btn" style="background:${mundo.color}">`;
+    html += `▶ Abrir playlist completa no YouTube</a>`;
+    html += `<p style="font-size:12px;color:var(--text3);margin-bottom:14px;font-weight:500">${mundo.desc}</p>`;
+
+    mundo.videos.forEach(v => {
+      html += `<a href="${v.url}" target="_blank" class="video-card">`;
+      html += `<div class="video-thumb" style="background:#ff0000">▶</div>`;
+      html += `<div class="video-info">`;
+      html += `<div class="video-num">Aula ${v.n}</div>`;
+      html += `<div class="video-title">${v.title}</div>`;
+      html += `<div class="video-desc">${v.desc}</div>`;
+      html += `</div>`;
+      html += `<div class="video-arrow">→</div>`;
+      html += `</a>`;
+    });
+
+    html += '</div>';
+  });
+
+  html += '<div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-top:8px;text-align:center">';
+  html += '<p style="font-size:12px;color:var(--text3);font-weight:500;line-height:1.8">';
+  html += '🐍 Canal completo: <a href="https://www.youtube.com/@CursoemVideo" target="_blank" style="color:var(--green2);font-weight:700">@CursoemVideo</a> no YouTube<br>';
+  html += 'Para tópicos avançados (semanas 7-10): <a href="https://www.youtube.com/@dunossauro" target="_blank" style="color:var(--blue);font-weight:700">@dunossauro</a>';
+  html += '</p></div>';
+
+  html += '</div>';
+  area.innerHTML = html;
+}
+
 function renderRanking() {
   const allUsers = window._rankData || [];
   const medals=['🥇','🥈','🥉'];
@@ -1115,6 +1255,7 @@ window.switchTab = function(name, el) {
   if(el) el.classList.add('active');
   if(name==='challenge') renderChallenge();
   if(name==='ranking') renderRanking();
+  if(name==='videos') renderVideos();
 };
 
 function showToast(msg, dur=2500) {
