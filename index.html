@@ -114,6 +114,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .btn-google{background:#fff;color:#444;border:1.5px solid var(--border);display:flex;align-items:center;gap:8px;padding:10px 20px;font-size:14px;border-radius:9px;box-shadow:var(--shadow)}
 .btn-google:hover{box-shadow:var(--shadow2);transform:translateY(-1px)}
 .ex-feedback{margin-top:10px;padding:10px 13px;border-radius:8px;font-size:12.5px;line-height:1.65;display:none;font-weight:500}
+.ex-attempts{font-size:11px;color:var(--text3);font-weight:600;margin-top:6px;display:flex;align-items:center;gap:5px}
+.attempt-dot{width:8px;height:8px;border-radius:50%;background:var(--border2)}
+.attempt-dot.used{background:var(--red)}
+.btn-solution{background:var(--purple-dim);color:var(--purple);border:1.5px solid var(--purple-mid);display:none;margin-top:8px}
+.btn-solution:hover{background:#e8e0f8}
+.btn-solution.show{display:inline-flex;align-items:center;gap:6px}
+.solution-box{background:#f8f5ff;border:1.5px solid var(--purple-mid);border-radius:10px;padding:15px;margin-top:10px;display:none}
+.solution-box.show{display:block}
+.solution-box h4{font-size:12px;font-weight:800;color:var(--purple);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.solution-box pre{background:var(--text);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;color:#d4c8be;line-height:1.7;overflow-x:auto;margin:0}
+.ex-done-hint{font-size:11px;color:var(--text3);font-weight:600;margin-top:4px}
 .ex-feedback.show{display:block}
 .fb-ok{background:var(--green-dim);border:1.5px solid var(--green-mid);color:var(--green2)}
 .fb-err{background:var(--red-dim);border:1.5px solid #f5c0bb;color:var(--red)}
@@ -267,6 +278,10 @@ const app = initializeApp({
 });
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// ATTEMPT TRACKING
+const ATTEMPTS = {}; // {exId: count}
+const SOLUTIONS_SHOWN = {}; // {exId: true}
 
 // STATE
 const S = {
@@ -562,13 +577,33 @@ window.checkEx = function(lessonId, exId) {
   const ed = document.getElementById('ed-'+exId);
   if(!ed) return;
   const code = ed.value.trim();
-  if(code.length < 5) { showFb(exId,'fb-err','Escreva algum código antes!'); return; }
+  if(code.length < 5) { showFb(exId,'fb-err','Escreva algum código antes de verificar!'); return; }
   const lc = LESSON_CONTENT[lessonId];
   const ex = lc?.exercises?.find(e=>e.id===exId);
   const kws = ex?.checkKeywords||[];
   const ok = kws.length===0 || kws.some(k=>code.toLowerCase().includes(k.toLowerCase()));
-  if(ok || code.length > 20) markExDone(lessonId, exId, ex?.level||'easy');
-  else showFb(exId,'fb-err','O código não usa os conceitos esperados. Peça uma dica 💡');
+  if(ok || code.length > 20) {
+    markExDone(lessonId, exId, ex?.level||'easy');
+    return;
+  }
+  // Wrong answer — track attempt
+  ATTEMPTS[exId] = (ATTEMPTS[exId]||0) + 1;
+  const attempts = ATTEMPTS[exId];
+  // Update attempt dots
+  const attEl = document.getElementById('att-'+exId);
+  if(attEl) {
+    const dots = attEl.querySelectorAll('.attempt-dot');
+    dots.forEach((d,i) => { if(i < attempts) d.classList.add('used'); });
+  }
+  // Show solution button after 3 attempts
+  if(attempts >= 3) {
+    const solBtn = document.getElementById('sol-btn-'+exId);
+    if(solBtn) solBtn.classList.add('show');
+    showFb(exId,'fb-err','Hmm, ainda não está certo. Você pode ver a solução agora clicando em "Ver solução" abaixo 👇');
+  } else {
+    const left = 3 - attempts;
+    showFb(exId,'fb-err',`O código não usa os conceitos esperados. Ainda tem ${left} tentativa(s) antes de ver a solução. Peça uma dica! 💡`);
+  }
 };
 
 async function markExDone(lessonId, exId, level) {
@@ -584,6 +619,43 @@ async function markExDone(lessonId, exId, level) {
 }
 
 window.showHint = function(exId, hint) { showFb(exId,'fb-hint','💡 '+hint); };
+
+window.showSolution = function(lessonId, exId) {
+  const lc = LESSON_CONTENT[lessonId];
+  const ex = lc?.exercises?.find(e=>e.id===exId);
+  const solBox = document.getElementById('sol-'+exId);
+  const solBtn = document.getElementById('sol-btn-'+exId);
+  if(!solBox || !ex) return;
+  
+  SOLUTIONS_SHOWN[exId] = true;
+  
+  // Generate solution based on placeholder as starting point
+  const placeholder = ex.placeholder || '# Solução não disponível';
+  const hint = ex.hint || '';
+  
+  solBox.innerHTML = `
+    <h4>💡 Solução comentada</h4>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:500">
+      Estude o código abaixo, entenda cada linha e depois tente reescrever do zero sem olhar.
+      Isso vai fixar o aprendizado muito melhor do que apenas copiar!
+    </p>
+    <pre>${placeholder.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+    <p style="font-size:11px;color:var(--purple);margin-top:10px;font-weight:600">
+      💜 Dica extra: ${hint}
+    </p>
+    <button class="btn btn-green" style="margin-top:12px;font-size:12px" 
+      onclick="markExDoneWithHelp('${lessonId}','${exId}','${ex.level||'easy'}')">
+      ✓ Entendi — marcar como concluído
+    </button>
+  `;
+  solBox.classList.add('show');
+  if(solBtn) solBtn.style.display = 'none';
+};
+
+window.markExDoneWithHelp = function(lessonId, exId, level) {
+  SOLUTIONS_SHOWN[exId] = true;
+  markExDone(lessonId, exId, level);
+};
 window.showHintById = function(exId) {
   const el = document.getElementById('hint-data-'+exId);
   const hint = el ? el.textContent : 'Revise os exemplos da lição';
